@@ -1,14 +1,11 @@
 from statistics import mean
 from typing import List, Tuple, Union
-import random
-from chooser import TopChooser
 
-from tensorflow.keras import layers
 from tensorflow import keras
 import numpy as np
 
-from _keras import vectorize, from_vector, modelcopy
-from simple_nn import NN
+from ._keras import vectorize, from_vector, modelcopy
+from .simple_nn import NN
 
 #import dill as pickle
 import pickle
@@ -96,8 +93,7 @@ class Individual:
 
 
 class GeneticAlgorithm:
-    def __init__(self, population: List[Individual], chooser, kidsmaker, mutator, tracker=None, keep=2, n_mutated_keeped: int = 0) -> None:
-        from track import Tracker
+    def __init__(self, population: List[Individual], chooser, kidsmaker, mutator, tracker: "Tracker" =None, keep=2, n_mutated_keeped: int = 0) -> None:
         self.pop = population
         self.kidsmaker = kidsmaker
         self.mutator = mutator
@@ -106,7 +102,7 @@ class GeneticAlgorithm:
         self._keep = keep
         self.n_mutated_keeped = n_mutated_keeped
         self.id = max(individual.id for individual in self.pop) + 1
-        self.tracker: Tracker = tracker
+        self.tracker = tracker
         #if self.tracker is not None:
             #self.tracker(self.pop)
 

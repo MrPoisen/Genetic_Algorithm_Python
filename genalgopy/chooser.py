@@ -1,7 +1,20 @@
+from abc import abstractmethod, ABC
+from typing import List
 import numpy as np
 
+from .genetic import Individual
 
-class DefaultChooser:
+class AbstractChooser(ABC):
+    @abstractmethod
+    def __call__(self, individuals: List[Individual], weights: List[float]):
+        pass
+
+    @abstractmethod
+    def prepare(self, individuals: List[Individual], weights: List[float]):
+        pass
+
+
+class DefaultChooser(AbstractChooser):
     def __init__(self, replacement: bool = False) -> None:
         self.replace = replacement
     def __call__(self, individuals, weights):
@@ -19,7 +32,7 @@ class DefaultChooser:
                 weights = 0
         return individuals, weights
 
-class TopChooser:
+class TopChooser(AbstractChooser):
     def __init__(self, top: int, replace: bool = False) -> None:
         self.top = top
         self.replace = replace

@@ -1,6 +1,7 @@
 from typing import Tuple
-from genetic import Individual
 import random
+
+from .genetic import Individual
 
 def single_crossover(parent1: Tuple[float, Individual], parent2: Tuple[float, Individual], cur_id: int):
     genom1, genom2 = list(parent1[1].get_genome()), list(parent2[1].get_genome())
@@ -74,7 +75,7 @@ def simplebias_uniform_crossover(parent1: Tuple[float, Individual], parent2: Tup
     kid2.edit_genom(genom2)
     return kid1, kid2
 
-def partially_mapped_crossover(parent1: Tuple[float, Individual], parent2: Tuple[float, Individual], cur_id: int):
+def partially_mapped_crossover(parent1: Tuple[float, Individual], parent2: Tuple[float, Individual], cur_id: int): # TODO: might not work
     map_1, map_2 = {}, {}
     genom1, genom2 = parent1[1].get_genome(), parent2[1].get_genome()
     parent_1_genom, parent_2_genom = genom1.copy(), genom2.copy()
@@ -89,20 +90,17 @@ def partially_mapped_crossover(parent1: Tuple[float, Individual], parent2: Tuple
         genom2[i] = parent_1_genom[i]
         map_2[parent_1_genom[i]] = parent_2_genom[i]
     
-    #print("Hi")
     for i in range(0, position1):
-        #print("enter w1", i, genom1[i], genom1, map_1)
         while genom1[i] in map_1.keys():
             genom1[i] = map_1[genom1[i]]
-        #print("enter w2", i, genom2[i], genom2, map_2)
+
         while genom2[i] in map_2.keys():
             genom2[i] = map_2[genom2[i]]
-    #print("Hi2")
+
     for i in range(position2, len(parent_1_genom)):
-        #print("enter w1", i, genom1[i], genom1, map_1)
         while genom1[i] in map_1.keys():
             genom1[i] = map_1[genom1[i]]
-        #print("enter w2", i, genom2[i], genom2, map_2)
+
         while genom2[i] in map_2.keys():
             genom2[i] = map_2[genom2[i]]
 
