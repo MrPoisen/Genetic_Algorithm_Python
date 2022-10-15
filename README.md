@@ -14,7 +14,7 @@ def get_pop() -> list[Individual]:
 def fitness(indivdual: Individual) -> float: # or int
     ...
 
-ga = GeneticAlgorithm(get_pop(), DefaultChooser(), single_crossover, SimpleMutator(), tracker=..., n_keep=..., n_mutated_keeped=...)
+ga = GeneticAlgorithm(get_pop(), DefaultChooser(), single_crossover, SimpleMutator(), tracker=..., n_keep=..., n_mutate_keeped=...)
 ga.train(iterations=10, fitness_func=fitness)
 # or use ga.evololution(fitness, do_sort) where fitness is a list of tuples of a number representing a score and an Individual
 # if the list isn't sorted already, pass True for do_sort 

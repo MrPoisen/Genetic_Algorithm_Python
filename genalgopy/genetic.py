@@ -1,17 +1,19 @@
 from statistics import mean
 from typing import List, Tuple, Union
 
-from tensorflow import keras
+try:
+    from tensorflow import keras
+    TENSORFLOW = True
+except ImportError:
+    TENSORFLOW = False
+
 import numpy as np
 
-from ._keras import vectorize, from_vector, modelcopy
+from ._keras import vectorize, from_vector, modelcopy, _is_tensornetwork
 from .simple_nn import NN
 
 #import dill as pickle
 import pickle
-
-def _is_tensornetwork(obj):
-    return isinstance(obj, (keras.Sequential, keras.Model)) or issubclass(type(obj), keras.Model)
 
 def _get_fitness(pop, fitness_func):
     fitness = []
@@ -21,7 +23,7 @@ def _get_fitness(pop, fitness_func):
     return fitness
 
 class Individual:
-    def __init__(self, genoms: Union[list, keras.Sequential], id_: int) -> None:
+    def __init__(self, genoms: Union[list, "keras.Sequential"], id_: int) -> None:
         self.genoms = genoms
         self.id = id_
 
@@ -82,6 +84,8 @@ class Individual:
         if genom_type == "list":
             return Individual(genom, id_)
         elif genom_type == "tensorflow":
+            if TENSORFLOW is False:
+                raise Exception("can't load Individual because tensorflow isn't installed")
             model = keras.models.model_from_json(genom[0])
             model.set_weights(genom[1])
             return Individual(model, id_)
@@ -93,14 +97,24 @@ class Individual:
 
 
 class GeneticAlgorithm:
-    def __init__(self, population: List[Individual], chooser, kidsmaker, mutator, tracker: "Tracker" =None, keep=2, n_mutated_keeped: int = 0) -> None:
+    def __init__(self, population: List[Individual], chooser, kidsmaker, mutator, tracker: "Tracker" =None, keep=2, n_mutate_keeped: int = 0) -> None:
+        """
+        Args:
+            population: list of Individuals to evolve
+            chooser: object that decides which two individuals to choose for childmaking
+            kidsmaker: creates two new Individuals based of two parents
+            mutator: mutates Individuals
+            tracker: tracks the fitness
+            keep: amount of best Individuals that should be kept in the new population
+            n_mutate_keeped: amount of least best keeped Individals that should mutate
+        """
         self.pop = population
         self.kidsmaker = kidsmaker
         self.mutator = mutator
         self.chooser = chooser
 
         self._keep = keep
-        self.n_mutated_keeped = n_mutated_keeped
+        self.n_mutate_keeped = n_mutate_keeped
         self.id = max(individual.id for individual in self.pop) + 1
         self.tracker = tracker
         #if self.tracker is not None:
@@ -126,7 +140,7 @@ class GeneticAlgorithm:
             self.tracker.gen = gen
             #self.tracker(self.pop, True)
 
-    def train(self, iterations, fitness_func):
+    def train(self, iterations: int, fitness_func):
         for i in range(iterations):
             fitness = _get_fitness(self.pop, fitness_func)
             self.evolution(fitness)
@@ -185,8 +199,8 @@ class GeneticAlgorithm:
             self.id += 2
             kid1, kid2 = self.mutator(kid1), self.mutator(kid2)
             new_pow.extend([kid1, kid2])
-        if self.n_mutated_keeped > 0:
-            for index, indiv in enumerate(new_pow[self._keep-self.n_mutated_keeped:self._keep]):
+        if self.n_mutate_keeped > 0:
+            for index, indiv in enumerate(new_pow[self._keep-self.n_mutate_keeped:self._keep]):
                 new_pow[index+self._keep] = self.mutator(indiv)
         self.pop = new_pow
 

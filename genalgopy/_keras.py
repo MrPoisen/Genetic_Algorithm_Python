@@ -3,6 +3,14 @@
 
 import numpy as np
 
+try:
+    from tensorflow import keras
+    def _is_tensornetwork(obj):
+        return isinstance(obj, (keras.Sequential, keras.Model)) or issubclass(type(obj), keras.Model)
+except ImportError:
+    def _is_tensornetwork(obj):
+        return False 
+
 def vectorize(model):
     vec = np.array([])
     for layer in model.layers:
@@ -39,3 +47,4 @@ def _make_empty(model):
         weights = np.ones_like(weights)
         bias = np.zeros_like(bias)
         layer.set_weights((weights, bias))
+
