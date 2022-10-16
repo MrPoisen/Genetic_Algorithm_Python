@@ -15,8 +15,12 @@ class AbstractChooser(ABC):
 
 
 class DefaultChooser(AbstractChooser):
-    def __init__(self, replacement: bool = False) -> None:
-        self.replace = replacement
+    def __init__(self, replace: bool = False) -> None:
+        """
+        Args:
+            replace: should be False if the choosen samples should be unique
+        """
+        self.replace = replace
     def __call__(self, individuals, weights):
         if weights==0:
             return np.random.choice(individuals, 2, self.replace)
@@ -34,6 +38,11 @@ class DefaultChooser(AbstractChooser):
 
 class TopChooser(AbstractChooser):
     def __init__(self, top: int, replace: bool = False) -> None:
+        """
+        Args:
+            top: how many of the best Individuals should be choosen from
+            replacement: should be False if the choosen samples should be unique
+        """
         self.top = top
         self.replace = replace
 

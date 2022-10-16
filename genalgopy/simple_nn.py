@@ -36,10 +36,16 @@ class Layer:
         return layer
     
 class NN:
-    def __init__(self, *layers: List[Layer]) -> None:
+    def __init__(self, *layers: Layer) -> None:
         self.layers = layers
     
     def __call__(self, inp):
+        """
+        Args:
+            inp: list of input values for the NN or a list of lists of input values
+        Returns:
+            outputs of the neural network or list of outputs
+        """
         inp = np.array(inp, dtype=np.double)
         solutions = []
         multi = True
@@ -52,14 +58,22 @@ class NN:
             solutions.append(i)
         return solutions if multi else solutions[0]
     
-    def vectorize(self):
+    def vectorize(self) -> np.ndarray:
+        """
+        Returns:
+            numpy array representation of the NN
+        """
         vec = np.array([], dtype=np.double)
         for layer in self.layers:
             vec = np.append(vec, layer.vectorize())
         return vec
         #return np.ndarray.flatten(vec)
     
-    def from_vector(self, vec):
+    def from_vector(self, vec: list):
+        """
+        Args:
+            vec: list or numpy array representation of the NN
+        """
         vec = np.array(vec, dtype=np.double) # ensure vec is an numpy array
         start_idx = 0
         for layer in self.layers:
@@ -69,16 +83,30 @@ class NN:
             start_idx += layer.outputs
     
     def copy(self):
+        """
+        Returns:
+            exact copy of this NN 
+        """
         new_layers = []
         for layer in self.layers:
             new_layers.append(layer.copy())
         return NN(*new_layers)
     
-    def save(self):
+    def save(self) -> bytes:
+        """
+        Returns:
+            bytes representing the NN
+        """
         return pickle.dumps(self)
 
     @staticmethod
-    def load(data: bytes):
+    def load(data: bytes) -> "NN":
+        """
+        Args:
+            data: bytes representing a NN
+        Returns:
+            a NN 
+        """
         return pickle.loads(data)
     
 def relu(x):
@@ -93,15 +121,3 @@ def sigmoid(x):
 def softmax(x):
     e_x = np.exp(x-np.max(x))
     return e_x / e_x.sum(axis=0)
-
-if __name__ == "__main__":
-    l1 = Layer(2, 4, relu)
-    l2 = Layer(4, 4, linear)
-    l3 = Layer(4, 2, softmax)
-    nn = NN(l1, l2, l3)
-    print("n", nn([1, 2]))
-    import pickle
-
-    d = nn.save()
-    m = NN.load(d)
-    print("n", m([1, 2]))

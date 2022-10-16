@@ -23,7 +23,7 @@ def _get_fitness(pop, fitness_func):
     return fitness
 
 class Individual:
-    def __init__(self, genoms: Union[list, "keras.Sequential"], id_: int) -> None:
+    def __init__(self, genoms: Union[list, "keras.Sequential", NN], id_: int) -> None:
         self.genoms = genoms
         self.id = id_
 
@@ -36,25 +36,50 @@ class Individual:
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def edit_genom(self, genom):
+    def edit_genom(self, genoms: list):
+        """
+        Args:
+            genoms: replaces current genom
+        """
         if _is_tensornetwork(self.genoms):
-            from_vector(self.genoms, genom)
+            from_vector(self.genoms, genoms)
+        elif isinstance(self.genoms, NN):
+            self.genoms.from_vector(genoms)
         else:
-            self.genoms = genom
+            self.genoms = genoms
 
-    def get_genome(self):
+    def get_genome(self) -> list:
+        """
+        Returns:
+            list of current genoms
+        """
         if _is_tensornetwork(self.genoms):
             return vectorize(self.genoms)
+        elif isinstance(self.genoms, NN):
+            return self.genoms.vectorize()
         return self.genoms
 
-    def copy(self, id_):
+    def copy(self, id_: int) -> "Individual":
+        """
+        Args:
+            id_: id for the copy
+        Returns:
+            an Individual with the same genoms as the current one
+        """
         if _is_tensornetwork(self.genoms):
             genom = modelcopy(self.genoms)
         else:
             genom = self.genoms.copy()
         return Individual(genom, id_)
 
-    def execute(self, x, default=None):
+    def execute(self, x: list, default=None):
+        """
+        Args:
+            x: input for a keras.Sequential or NN
+            default: will be returned if the genoms are a list (not a Neural Network)
+        Returns:
+            default or the output of a Neural Network
+        """
         arr = np.array(x)
         if _is_tensornetwork(self.genoms):
             multi = True
@@ -68,6 +93,10 @@ class Individual:
         return default
 
     def save(self) -> bytes:
+        """
+        Returns:
+            Individual as bytes
+        """
         genom_type = "list"
         genom = self.genoms
         if _is_tensornetwork(self.genoms):
@@ -80,12 +109,18 @@ class Individual:
 
     @staticmethod
     def load(data: bytes) -> "Individual":
+        """
+        Args:
+            data: bytes representation of an Individual
+        Returns:
+            an Individual based on data
+        """
         genom_type, genom, id_ = pickle.loads(data)
         if genom_type == "list":
             return Individual(genom, id_)
         elif genom_type == "tensorflow":
             if TENSORFLOW is False:
-                raise Exception("can't load Individual because tensorflow isn't installed")
+                raise Exception("can't load Individual because tensorflow couldn't be imported")
             model = keras.models.model_from_json(genom[0])
             model.set_weights(genom[1])
             return Individual(model, id_)
@@ -127,11 +162,17 @@ class GeneticAlgorithm:
             raise Exception("You must give a population of size > 0")
 
     def save_population(self) -> bytes:
+        """
+        returns bytes representing the population
+        """
         gen = self.tracker.gen if self.tracker is not None else None
         pop = [i.save() for i in self.pop]
         return pickle.dumps((gen, self.id, pop))
 
     def load_population(self, data: bytes):
+        """
+        loads the population from bytes
+        """
         gen, id_, pop = pickle.loads(data)
         self.id = id_
         self.pop = [Individual.load(i) for i in pop]
@@ -141,6 +182,11 @@ class GeneticAlgorithm:
             #self.tracker(self.pop, True)
 
     def train(self, iterations: int, fitness_func):
+        """
+        Args:
+            iterations: how often the population should evolve
+            fitness_func: function that evaluates fitness of an Individual
+        """
         for i in range(iterations):
             fitness = _get_fitness(self.pop, fitness_func)
             self.evolution(fitness)
@@ -148,36 +194,54 @@ class GeneticAlgorithm:
             self.tracker(_get_fitness(self.pop, fitness_func))
 
     def train_till_single_best(self, fitness_cap: Union[float, int], fitness_func, max_iterations: Union[float, int] = float("inf")) -> int:
+        """
+        Args:
+            fitness_cap: value the best Individual should achieve
+            fitness_func: function that evaluates fitness of an Individual
+            max_iterations: maximum amount of evolutions of the population before exiting the function
+        Returns:
+            amount of evolutions that were needed to achieve the fitness_cap 
+        """
         i = 0
-        while True:
+        while i < max_iterations:
             fitness = _get_fitness(self.pop, fitness_func)
             if fitness[0][0] >= fitness_cap:
                 break
             self.evolution(fitness)
             i += 1
-            if i >= max_iterations:
-                break
 
         if self.tracker is not None:
             self.tracker(_get_fitness(self.pop, fitness_func))
         return i
 
     def train_till_average_best(self, fitness_cap: Union[float, int], fitness_func, max_iterations: Union[float, int] = float("inf")) -> int:
+        """
+        Args:
+            fitness_cap: value the population should achieve on average
+            fitness_func: function that evaluates fitness of an Individual
+            max_iterations: maximum amount of evolutions of the population before exiting the function
+        Returns:
+            amount of evolutions that were needed to achieve the fitness_cap 
+        """
         i = 0
-        while True:
+        while i < max_iterations:
             fitness = _get_fitness(self.pop, fitness_func)
             fitnesses = [i[0] for i in fitness] # i[0] = fitness
             if mean(fitnesses) >= fitness_cap:
                 break
             self.evolution(fitness)
             i += 1
-            if i >= max_iterations:
-                break
+
         if self.tracker is not None:
             self.tracker(_get_fitness(self.pop, fitness_func))
         return i
 
     def evolution(self, fitness: List[Tuple[float, Individual]], do_sort=False):
+        """
+        Args:
+            fitness: list of Individuals and there fitness value
+            do_sort: if the fitness list should be sorted (if it wasn't already)
+        """
         if do_sort:
             fitness.sort(key=lambda x: x[0], reverse=True)
         size = len(self.pop)

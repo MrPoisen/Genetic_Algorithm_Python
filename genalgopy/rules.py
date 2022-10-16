@@ -111,6 +111,14 @@ def partially_mapped_crossover(parent1: Tuple[float, Individual], parent2: Tuple
 
 class SimpleMutator:
     def __init__(self, lower: float, upper: float, amount: int = 1, decimal_places: int = 0, replace: bool = True) -> None:
+        """
+        Args:
+            lower: lowerbound for the generated mutation values
+            upper: upperbound for the generated mutation values
+            amount: amount of mutations
+            decimal_places: amount of decimal places for the mutation values
+            replace: if the mutation values should replace the original values or rather be added
+        """
         self.lower = float(lower)
         self.upper = float(upper)
         self.amount = amount
